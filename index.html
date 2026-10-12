@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dünya Savunması v1.3</title>
+    <title>Dünya Savunması v1.4</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background-color: #030308; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
@@ -62,7 +62,7 @@
     <div id="levelBanner" class="level-announcement">SEVİYE 1</div>
 
     <div id="overlay" class="overlay-screen">
-        <div id="overlayTitle" class="overlay-title">DÜNYA SAVUNMASI v1.3</div>
+        <div id="overlayTitle" class="overlay-title">DÜNYA SAVUNMASI v1.4</div>
         <div id="overlayDesc" class="overlay-desc">Dünyamızı asteroid istilasından koru!<br>Düşen güçlendiricileri topla, gemini geliştir ve istilayı durdur!</div>
         <button id="startBtn" class="btn-primary" onclick="startGame()">SAVAŞI BAŞLAT</button>
     </div>
@@ -183,7 +183,6 @@
         if (level >= 3 && Math.random() < 0.25) { type = 'ice'; hp = 3; }
         if (level >= 4 && Math.random() < 0.2) { type = 'armored'; hp = 5; size += 12; speed *= 0.75; }
         
-        // Detaylı asteroid görsel verisi
         let points = [];
         let numPoints = 8;
         for(let i=0; i<numPoints; i++) {
@@ -213,7 +212,7 @@
     function triggerNuke() {
         if (!nukeReady || gameState !== 'PLAYING') return;
         nukeReady = false; nukeTimer = nukeCooldown; document.getElementById('nukeBtn').disabled = true;
-        asteroids.forEach(a => { createExplosion(a.x, a.y, '#ff5500', 15); gold += 10; });
+        asteroids.forEach(a => { createExplosion(a.x, a.y, '#ff5500', 15); gold += 15; });
         asteroids = []; if (boss) boss.hp -= 40; updateHUD();
     }
 
@@ -255,8 +254,10 @@
                 m.x += (dx / dist) * m.speed; m.y += (dy / dist) * m.speed;
                 if (dist < 20) {
                     createExplosion(m.x, m.y, '#ffcc00', 12);
+                    gold += 3; // Füze vurduğunda da altın ekle
                     if (target === boss) boss.hp -= 8;
-                    else { target.hp -= 3; if (target.hp <= 0) { gold += Math.round(target.size / 3); asteroids.splice(asteroids.indexOf(target), 1); updateHUD(); } }
+                    else { target.hp -= 3; if (target.hp <= 0) { gold += Math.round(target.size / 2); asteroids.splice(asteroids.indexOf(target), 1); } }
+                    updateHUD();
                     missiles.splice(mi, 1);
                 }
             } else { m.y -= m.speed; }
@@ -279,7 +280,9 @@
             boss.x += Math.sin(Date.now() / 500) * 2.5;
             bullets.forEach((b, bi) => {
                 if (Math.abs(b.x - boss.x) < 75 && Math.abs(b.y - boss.y) < 45) {
-                    boss.hp -= b.dmg; createExplosion(b.x, b.y, '#ff0055', 4); bullets.splice(bi, 1);
+                    boss.hp -= b.dmg;
+                    gold += 2; // Boss'a isabet eden her mermide altın ekle
+                    createExplosion(b.x, b.y, '#ff0055', 4); bullets.splice(bi, 1); updateHUD();
                     if (boss.hp <= 0) { gold += 500; score += 2000; boss = null; gameWin(); }
                 }
             });
@@ -299,19 +302,24 @@
 
             bullets.forEach((b, bi) => {
                 if (Math.hypot(a.x - b.x, a.y - b.y) < a.size) {
-                    a.hp -= b.dmg; createExplosion(b.x, b.y, b.dmg > 1 ? '#ff0055' : '#00f0ff', 3); bullets.splice(bi, 1);
+                    a.hp -= b.dmg;
+                    
+                    // --- HER VURDUĞUMUZDA ALTIN HANEMİZE YAZILSIN ---
+                    gold += 2; 
+                    
+                    createExplosion(b.x, b.y, b.dmg > 1 ? '#ff0055' : '#00f0ff', 3); bullets.splice(bi, 1);
                     if (a.hp <= 0) {
                         createExplosion(a.x, a.y, a.type === 'fire' ? '#ff4400' : '#aaa', 10);
-                        gold += Math.round(a.size / 3);
+                        gold += Math.round(a.size / 2); // Patlama Bonusu
                         score += 20;
                         
-                        // %20 İhtimalle Power-up Düşürme
-                        if (Math.random() < 0.20) {
+                        if (Math.random() < 0.25) {
                             powerups.push({ x: a.x, y: a.y, type: Math.random() < 0.5 ? 'double' : 'damage' });
                         }
 
-                        asteroids.splice(i, 1); updateHUD();
+                        asteroids.splice(i, 1);
                     }
+                    updateHUD();
                 }
             });
         });
