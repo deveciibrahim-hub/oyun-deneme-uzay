@@ -1,0 +1,67 @@
+# Her push'ta test APK'sı üretir ve "apk-son" sürümüne (Releases) koyar.
+# Telefondan: GitHub > Releases > "Test APK (son)" > app-debug.apk indir ve kur.
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Web derle
+        run: |
+          npm ci
+          npm run build
+
+      - name: Capacitor sync
+        run: npx cap sync android
+
+      - name: APK derle (debug)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK'yı adlandır
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/dunya-savunmasi-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dunya-savunmasi-debug-apk
+          path: out/dunya-savunmasi-debug.apk
+
+      - name: Releases'a koy (apk-son)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-son
+          name: Test APK (son)
+          prerelease: true
+          make_latest: false
+          body: |
+            Otomatik derlenen test sürümü — commit ${{ github.sha }}.
+            Telefona kurmak için dunya-savunmasi-debug.apk dosyasını indir, aç, "bilinmeyen kaynaklara izin ver" de.
+          files: out/dunya-savunmasi-debug.apk

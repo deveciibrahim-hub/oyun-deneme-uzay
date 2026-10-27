@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dünya Savunması</string>
+    <string name="title_activity_main">Dünya Savunması</string>
+    <string name="package_name">com.deveciibrahim.dunyasavunmasi</string>
+    <string name="custom_url_scheme">com.deveciibrahim.dunyasavunmasi</string>
+</resources>
